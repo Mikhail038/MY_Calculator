@@ -13,7 +13,9 @@ const char* Line = NULL;
 //  E ::= T{[+-]T}*
 //  T ::= S{[*/]S}*
 //  S ::= P{[^]P}*
-//  P ::= '('E')'|N
+//  P ::= '('E')'|D
+//  D ::= N{[.]M}?
+//  M ::= [0-9]+
 //  N ::= [0-9]+
 //  $ ::= [\0]
 //
@@ -145,8 +147,63 @@ double get_P (void)
     }
     else
     {
-        Value = get_N ();
+        Value = get_D ();
     }
+
+    return Value;
+}
+
+double get_D (void)
+{
+    double Value = get_N ();
+
+    double SecondValue = 0;
+
+    if (*Line == '.')
+    {
+        Line++;
+
+        SecondValue = get_M ();
+    }
+
+    Value = Value + SecondValue;
+
+    return Value;
+}
+
+double get_M (void)
+{
+    int counter = 1;
+
+    int in_counter = 0;
+
+    double Value = 0;
+
+    double Add = 0;
+
+    const char* OldPtr = Line;
+
+    while (*Line >= '0' && *Line <= '9')
+    {
+        Add = (*Line - '0');
+
+        in_counter = counter;
+
+        while (in_counter > 0)
+        {
+            Add /= 10;
+
+            in_counter--;
+        }
+
+        Value = Value  + Add;
+
+        counter++;
+
+        Line++;
+    }
+
+    MLA (Line > OldPtr);
 
     return Value;
 }

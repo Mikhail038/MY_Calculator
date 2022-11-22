@@ -20,6 +20,10 @@ double get_S (void);
 
 double get_P (void);
 
+double get_D (void);
+
+double get_M (void);
+
 double get_N (void);
 
 double get_$ (void);
