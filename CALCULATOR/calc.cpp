@@ -9,25 +9,20 @@
 
 const char* Line = NULL;
 
-typedef struct
-{
-    int             length   = 0;
-    const char*     Name     = NULL;
-    double        (*function) (double) = NULL;
-} SUnFunction;
+// typedef struct
+// {
+//     int             length   = 0;
+//     const char*     Name     = NULL;
+//     double        (*function) (double) = NULL;
+// } SUnFunction;
 
 
-const SUnFunction ArrUFunc[] =
-{
-    #define DEF_UFUNC(def_length, def_name, def_func) \
-    {def_length, def_name, def_func},
+// const SUnFunction ArrUFunc[] =
+// {
+//
+// };
 
-    #include "ufunctions.h"
-
-    #undef DEF_UFUNC
-};
-
-const int SzArrUFunc = sizeof (ArrUFunc);
+//const int SzArrUFunc = sizeof (ArrUFunc);
 
 //=======================================================================================================================================================================================
 //
@@ -36,7 +31,7 @@ const int SzArrUFunc = sizeof (ArrUFunc);
 //  Mul         ::= Pow{[*/]Pow}*
 //  Pow         ::= Bracket{[^]Bracket}*
 //  Bracket     ::= '('Add')' | Number | Function
-//  Number      ::= Int{[.]Frac}?{[eE][-+]Int}?
+//  Number      ::= [eE] | [Pp][Ii] | Int{[.]Frac}?{[eE]Int}?
 //  Frac        ::= [0-9]+
 //  Int         ::= [0-9]+
 //  Function    ::= "sin"Number | "cos"Number | "tg"Number | "ctg"Number | "ln"Number
@@ -167,13 +162,21 @@ double get_Bracket (void)
 
         Line++;
     }
-    else if ((*Line >= '0') && (*Line <= '9'))
-    {
-        Value = get_Number ();
+
+    #define DEF_UFUNC(def_length, def_name, def_func) \
+    else if (strncasecmp (Line, def_name, def_length) == 0) \
+    {\
+        \
+        Value = get_Function ();\
     }
+
+    #include "ufunctions.h"
+
+    #undef DEF_UFUNC
+
     else
     {
-        Value = get_Function ();
+        Value = get_Number ();
     }
 
     return Value;
@@ -181,9 +184,24 @@ double get_Bracket (void)
 
 double get_Number (void)
 {
+    if (*Line == 'e' || *Line == 'E')
+    {
+        Line++;
+        return M_E;
+    }
+
+    if (strncasecmp (Line, "PI", 2) == 0)
+    {
+        Line += 2;
+
+        return M_PI;
+    }
+
     double Value = get_Int ();
 
     double SecondValue = 0;
+
+    double ThirdValue = 0;
 
     if (*Line == '.')
     {
@@ -192,7 +210,25 @@ double get_Number (void)
         SecondValue = get_Frac ();
     }
 
+
+    if (*Line == 'e' || *Line == 'E')
+    {
+        Line++;
+
+    //         int Marker = 0;
+    //
+    //         Marker = *Line;
+    //
+    //         MLA (Marker == '-' || Marker == '+');
+    //
+    //         Line++;
+
+        ThirdValue = get_Int ();
+    }
+
     Value = Value + SecondValue;
+
+    Value = Value * pow (10, ThirdValue);
 
     return Value;
 }
@@ -258,19 +294,23 @@ double get_Function (void)
 
     const char* OldPtr = Line;
 
-    for (int counter = 0; counter < SzArrUFunc; counter++)
-    {
-        if (strncasecmp (Line, ArrUFunc[counter].Name, ArrUFunc[counter].length) == 0)
-        {
-            Line += ArrUFunc[counter].length;
-
-            Value = get_Bracket ();
-
-            Value = ArrUFunc[counter].function (Value);
-
-            break;
-        }
+    if (0) {}
+    #define DEF_UFUNC(def_length, def_name, def_func) \
+    else if (strncasecmp (Line, def_name, def_length) == 0) \
+    {\
+        Line += def_length;\
+        \
+        Value = get_Bracket ();\
+        \
+        Value = def_func ;\
     }
+
+    #include "ufunctions.h"
+
+    #undef DEF_UFUNC
+
+
+
 
     MLA (Line > OldPtr);
 
@@ -292,3 +332,5 @@ double get_$ (void)
 
     return Value;
 }
+
+//=======================================================================================================================================================================================
