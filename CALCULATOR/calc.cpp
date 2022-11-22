@@ -1,5 +1,7 @@
+//=======================================================================================================================================================================================
 
 #include <math.h>
+#include <string.h>
 
 #include "calc.h"
 
@@ -7,22 +9,40 @@
 
 const char* Line = NULL;
 
+typedef struct
+{
+    int             length   = 0;
+    const char*     Name     = NULL;
+    double        (*function) (double) = NULL;
+} SUnFunction;
+
+
+const SUnFunction ArrUFunc[] =
+{
+    #define DEF_UFUNC(def_length, def_name, def_func) \
+    {def_length, def_name, def_func},
+
+    #include "ufunctions.h"
+
+    #undef DEF_UFUNC
+};
+
+const int SzArrUFunc = sizeof (ArrUFunc);
+
 //=======================================================================================================================================================================================
 //
-//  G ::= E$
-//  E ::= T{[+-]T}*
-//  T ::= S{[*/]S}*
-//  S ::= P{[^]P}*
-//  P ::= '('E')'|D
-//  D ::= N{[.]M}?
-//  M ::= [0-9]+
-//  N ::= [0-9]+
-//  $ ::= [\0]
+//  Main        ::= Add$
+//  Add         ::= Mul{[+-]Mul}*
+//  Mul         ::= Pow{[*/]Pow}*
+//  Pow         ::= Bracket{[^]Bracket}*
+//  Bracket     ::= '('Add')' | Number | Function
+//  Number      ::= Int{[.]Frac}?{[eE][-+]Int}?
+//  Frac        ::= [0-9]+
+//  Int         ::= [0-9]+
+//  Function    ::= "sin"Number | "cos"Number | "tg"Number | "ctg"Number | "ln"Number
+//  $           ::= [\0]
 //
-//
-//
-//
-//===================s====================================================================================================================================================================
+//=======================================================================================================================================================================================
 
 const char* remove_spaces (char* Buffer)
 {
@@ -54,11 +74,11 @@ const char* remove_spaces (char* Buffer)
 
 //=======================================================================================================================================================================================
 
-double get_G (const char* Buffer)
+double get_Main (const char* Buffer)
 {
     Line = Buffer;
 
-    double Value = get_E ();
+    double Value = get_Add ();
 
     double SecondValue = get_$ ();
 
@@ -67,16 +87,16 @@ double get_G (const char* Buffer)
     return Value;
 }
 
-double get_E (void)
+double get_Add (void)
 {
-    double Value = get_T ();
+    double Value = get_Mul ();
 
     while ((*Line == '+') || (*Line == '-'))
     {
         char Operation = *Line;
         Line++;
 
-        double SecondValue = get_T ();
+        double SecondValue = get_Mul ();
 
         if (Operation == '+')
         {
@@ -91,16 +111,16 @@ double get_E (void)
     return Value;
 }
 
-double get_T (void)
+double get_Mul (void)
 {
-    double Value = get_S ();
+    double Value = get_Pow ();
 
     while ((*Line == '*') || (*Line == '/'))
     {
         char Operation = *Line;
         Line++;
 
-        double SecondValue = get_S ();
+        double SecondValue = get_Pow ();
 
         if (Operation == '*')
         {
@@ -115,15 +135,15 @@ double get_T (void)
     return Value;
 }
 
-double get_S (void)
+double get_Pow (void)
 {
-    double Value = get_P ();
+    double Value = get_Bracket ();
 
     while (*Line == '^')
     {
         Line++;
 
-        double SecondValue = get_P ();
+        double SecondValue = get_Bracket ();
 
         Value = pow (Value, SecondValue);
     }
@@ -131,31 +151,37 @@ double get_S (void)
     return Value;
 }
 
-double get_P (void)
+double get_Bracket (void)
 {
     double Value = 0;
+
+    //printf ("'%c'\n", *Line);
 
     if (*Line == '(')
     {
         Line++;
 
-        Value = get_E ();
+        Value = get_Add ();
 
         MLA (*Line == ')');
 
         Line++;
     }
+    else if ((*Line >= '0') && (*Line <= '9'))
+    {
+        Value = get_Number ();
+    }
     else
     {
-        Value = get_D ();
+        Value = get_Function ();
     }
 
     return Value;
 }
 
-double get_D (void)
+double get_Number (void)
 {
-    double Value = get_N ();
+    double Value = get_Int ();
 
     double SecondValue = 0;
 
@@ -163,7 +189,7 @@ double get_D (void)
     {
         Line++;
 
-        SecondValue = get_M ();
+        SecondValue = get_Frac ();
     }
 
     Value = Value + SecondValue;
@@ -171,7 +197,7 @@ double get_D (void)
     return Value;
 }
 
-double get_M (void)
+double get_Frac (void)
 {
     int counter = 1;
 
@@ -208,7 +234,7 @@ double get_M (void)
     return Value;
 }
 
-double get_N (void)
+double get_Int (void)
 {
     double Value = 0;
 
@@ -219,6 +245,31 @@ double get_N (void)
         Value = Value * 10 + (*Line - '0');
 
         Line++;
+    }
+
+    MLA (Line > OldPtr);
+
+    return Value;
+}
+
+double get_Function (void)
+{
+    double Value = 0;
+
+    const char* OldPtr = Line;
+
+    for (int counter = 0; counter < SzArrUFunc; counter++)
+    {
+        if (strncasecmp (Line, ArrUFunc[counter].Name, ArrUFunc[counter].length) == 0)
+        {
+            Line += ArrUFunc[counter].length;
+
+            Value = get_Bracket ();
+
+            Value = ArrUFunc[counter].function (Value);
+
+            break;
+        }
     }
 
     MLA (Line > OldPtr);

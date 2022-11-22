@@ -13,7 +13,7 @@ int main ()
 
     //printf ("'%s'\n", Line);
 
-    printf ("%lg\n", get_G (Line));
+    printf ("%lg\n", get_Main (Line));
 
     free (RawLine);
 

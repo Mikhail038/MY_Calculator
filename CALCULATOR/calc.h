@@ -10,21 +10,23 @@ const char* remove_spaces (char* Buffer);
 
 //=======================================================================================================================================================================================
 
-double get_G (const char* Buffer);
+double get_Main (const char* Buffer);
 
-double get_E (void);
+double get_Add (void);
 
-double get_T (void);
+double get_Mul (void);
 
-double get_S (void);
+double get_Pow (void);
 
-double get_P (void);
+double get_Bracket (void);
 
-double get_D (void);
+double get_Number (void);
 
-double get_M (void);
+double get_Frac (void);
 
-double get_N (void);
+double get_Int (void);
+
+double get_Function (void);
 
 double get_$ (void);
 
